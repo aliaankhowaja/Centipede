@@ -49,6 +49,7 @@ void generateMushrooms(); // generates mushrooms in the game grid
 void drawMushrooms(sf::RenderWindow& window, sf::Sprite& mushroomSprite); // loops through the game grid and if mushroom found then draw it in the game window
 void moveCentepedes(int*** centepedes); // moves the centepede
 void drawCentepedes(int*** centepedes, sf::RenderWindow& window, sf::Sprite& headSprite, sf::Sprite& segmentSprite); // draws the centepede in the game window
+bool mushroomExist(int x, int y);
 int main() {
 	int*** centepedes = new int** [2]; // 3d dynamic array. with 2 int arrays
 	srand(time(0));// adding the seeding value in the rand() function
@@ -109,7 +110,7 @@ int main() {
 	bulletSprite.setTexture(bulletTexture);
 	bulletSprite.setTextureRect(sf::IntRect(0, 0, boxPixelsX, boxPixelsY));
 	int emptySpaces = 0;
-	int startingX = 25 * boxPixelsX, startingY = 0;
+	int startingX = 17 * boxPixelsX, startingY = 0;
 
 	sf::Texture mushroomTexture;
 	sf::Sprite mushroomSprite;
@@ -159,6 +160,7 @@ int main() {
 	while (window.isOpen()) {
 		int framesPassed = 0;
 		// if ((!framesPassed % 32)) {
+		// cout << mushroomExist(centepedes[1][h][x], centepedes[1][h][y]);
 		window.draw(backgroundSprite);
 		drawMushrooms(window, mushroomSprite);
 		// }
@@ -264,9 +266,9 @@ void generateMushrooms() {
 	int mushrooms = 0;
 	static int totalMushrooms = 20;
 
-	for (int i = 0;i < 23;i++) {
+	for (int i = 1;i < 23;i++) {
 		for (int j = 0;j < gameColumns;j++) {
-			if (!(rand() % 28) && mushrooms <= totalMushrooms && gameGrid[i][j] != 1 && totalMushrooms && gameGrid[i][j] != 2) {
+			if (!(rand() % 50) && mushrooms <= totalMushrooms && gameGrid[i][j] != 1 && totalMushrooms && gameGrid[i][j] != 2) {
 				gameGrid[i][j] = 2;
 				mushrooms++;
 			}
@@ -290,6 +292,7 @@ void drawMushrooms(sf::RenderWindow& window, sf::Sprite& mushroomSprite) {
 		}
 	}
 }
+
 void drawCentepedes(int*** centepedes, sf::RenderWindow& window, sf::Sprite& headSprite, sf::Sprite& segmentSprite) {
 
 	int numberOfCentepedes = centepedes[0][0][0];
@@ -315,11 +318,17 @@ void drawCentepedes(int*** centepedes, sf::RenderWindow& window, sf::Sprite& hea
 		}
 	}
 }
+
 void moveCentepedes(int*** centepedes) {
 	static int numOfTimesCalled = 0;
 	int numberOfCentepedes = centepedes[0][0][0];
 	for (int centepede = 1; centepede <= numberOfCentepedes; centepede++) {
 		int lastDirection = centepedes[centepede][h][lastDir];
+		int row = (centepedes[centepede][h][y]) / boxPixelsY;
+		int col = centepedes[centepede][h][x] / boxPixelsX;
+		if (centepedes[centepede][h][dir]) row--;
+		if (!centepedes[centepede][h][dir])col--;
+
 		if (!(numOfTimesCalled % 10)) {
 			if (centepedes[centepede][h][anim] == 7) {
 				centepedes[centepede][h][anim] = 0;
@@ -327,46 +336,50 @@ void moveCentepedes(int*** centepedes) {
 				centepedes[centepede][h][anim] = centepedes[1][1][2] + 1;
 			}
 		}
-		// if (!(numOfTimesCalled % 32))cout << centepedes[centepede][h][x] << " ";
-		if (!(numOfTimesCalled % 32) && centepedes[centepede][h][dir] == down) {
+		if (!(numOfTimesCalled % 16) && centepedes[centepede][h][dir] == down) {
 			centepedes[centepede][h][dir] = abs(lastDirection - 2);
 			centepedes[centepede][h][lastDir] = abs(lastDirection - 2);
 			if (centepedes[centepede][h][dir] == 2)
-				centepedes[centepede][h][x] = centepedes[centepede][h][x] + 32;
+				centepedes[centepede][h][x] = centepedes[centepede][h][x] + boxPixelsX;
 			else
-				centepedes[centepede][h][y] = centepedes[centepede][h][y] - 32;
-		} else if (centepedes[centepede][h][x] == 0 && centepedes[centepede][h][dir] == 0) {
+				centepedes[centepede][h][y] = centepedes[centepede][h][y] - boxPixelsY;
+		} else if (!(numOfTimesCalled % 16) && (centepedes[centepede][h][x] == 0 || mushroomExist(row, col)) && centepedes[centepede][h][dir] == 0) {
 			centepedes[centepede][h][dir] = down;
-			centepedes[centepede][h][y] = centepedes[centepede][h][y] + 32;
-		} else if (centepedes[centepede][h][x] == 960 && centepedes[centepede][h][dir] == 2) {
+			centepedes[centepede][h][y] = centepedes[centepede][h][y] + boxPixelsY;
+		} else if (!(numOfTimesCalled % 16) && (centepedes[centepede][h][x] == 960 || mushroomExist(row, col)) && centepedes[centepede][h][dir] == 2) {
 			centepedes[centepede][h][dir] = down;
-			centepedes[centepede][h][x] = centepedes[centepede][h][x] - 32;
+			centepedes[centepede][h][x] = centepedes[centepede][h][x] - boxPixelsX;
 		}
 		if (centepedes[centepede][h][dir] % 2) {
-			centepedes[centepede][h][y] = centepedes[centepede][h][y] + centepedes[centepede][h][dir] - 2;
+			centepedes[centepede][h][y] = centepedes[centepede][h][y] + (centepedes[centepede][h][dir] - 2) * 2;
 		} else {
-			centepedes[centepede][h][x] = centepedes[centepede][h][x] + centepedes[centepede][h][dir] - 1;
+			centepedes[centepede][h][x] = centepedes[centepede][h][x] + (centepedes[centepede][h][dir] - 1) * 2;
 		}
 		for (int segment = 2; segment < 13; segment++) {
 			lastDirection = centepedes[centepede][segment][lastDir];
-			if (!(numOfTimesCalled % 32) && centepedes[centepede][segment][dir] == down) {
+			row = (centepedes[centepede][segment][y]) / boxPixelsY;
+			col = centepedes[centepede][segment][x] / boxPixelsX;
+			if (centepedes[centepede][segment][dir]) row--;
+			if (!centepedes[centepede][segment][dir])col--;
+
+			if (!(numOfTimesCalled % 16) && centepedes[centepede][segment][dir] == down) {
 				centepedes[centepede][segment][dir] = abs(lastDirection - 2);
 				centepedes[centepede][segment][lastDir] = abs(lastDirection - 2);
 				if (centepedes[centepede][segment][dir] == 2)
-					centepedes[centepede][segment][x] = centepedes[centepede][segment][x] + 32;
+					centepedes[centepede][segment][x] = centepedes[centepede][segment][x] + boxPixelsX;
 				else
-					centepedes[centepede][segment][y] = centepedes[centepede][segment][y] - 32;
-			} else if (centepedes[centepede][segment][x] == 0 && centepedes[centepede][segment][dir] == 0) {
+					centepedes[centepede][segment][y] = centepedes[centepede][segment][y] - boxPixelsY;
+			} else if (!(numOfTimesCalled % 16) && (centepedes[centepede][segment][x] == 0 || mushroomExist(row, col)) && centepedes[centepede][segment][dir] == 0) {
 				centepedes[centepede][segment][dir] = down;
-				centepedes[centepede][segment][y] = centepedes[centepede][segment][y] + 32;
-			} else if (centepedes[centepede][segment][x] == 960 && centepedes[centepede][segment][dir] == 2) {
+				centepedes[centepede][segment][y] = centepedes[centepede][segment][y] + boxPixelsY;
+			} else if (!(numOfTimesCalled % 16) && (centepedes[centepede][segment][x] == 960 || mushroomExist(row, col)) && centepedes[centepede][segment][dir] == 2) {
 				centepedes[centepede][segment][dir] = down;
-				centepedes[centepede][segment][x] = centepedes[centepede][segment][x] - 32;
+				centepedes[centepede][segment][x] = centepedes[centepede][segment][x] - boxPixelsX;
 			}
 			if (centepedes[centepede][segment][dir] % 2) {
-				centepedes[centepede][segment][y] = centepedes[centepede][segment][y] + centepedes[centepede][segment][dir] - 2;
+				centepedes[centepede][segment][y] = centepedes[centepede][segment][y] + (centepedes[centepede][segment][dir] - 2) * 2;
 			} else {
-				centepedes[centepede][segment][x] = centepedes[centepede][segment][x] + centepedes[centepede][segment][dir] - 1;
+				centepedes[centepede][segment][x] = centepedes[centepede][segment][x] + (centepedes[centepede][segment][dir] - 1) * 2;
 			}
 			if (centepedes[centepede][segment - 1][anim] == 7) {
 				centepedes[centepede][segment][anim] = 0;
@@ -377,4 +390,13 @@ void moveCentepedes(int*** centepedes) {
 	}
 	numOfTimesCalled++;
 }
+
+bool mushroomExist(int row, int col) {
+	if (gameGrid[row][col] == 1 || gameGrid[row][col] == 2) {
+		return true;
+	}
+	return false;
+}
+
+
 //TODO: fps in player movement and bullet
