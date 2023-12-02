@@ -26,8 +26,10 @@ const int c = 1; // column number of the sprite.
 const int h = 1; // head of the centepede.
 const int additionalData = 0; // additional data about the array
 const int numSeg = 0; // number of the segments in a centepede
+// const int centepedeIndex = 1
 const int dir = 3; // direction of the segment
 const int lastDir = 4; // revious direction of the centepede
+const int segmentIndex = 5;
 const int exists = 2; // the sprite exist (only for bullet until now)
 const int anim = 2; // animation for segment and head 
 const int left = 0;
@@ -45,11 +47,12 @@ void movePlayer(float player[], sf::Sprite& playerSprite, int direction); // mov
 void drawPlayer(sf::RenderWindow& window, float player[], sf::Sprite& playerSprite); // draws the player in the game window
 void moveBullet(float bullet[], sf::Clock& bulletClock); // moves the bullet
 void drawBullet(sf::RenderWindow& window, float bullet[], sf::Sprite& bulletSprite); // draws the bullet
-void generateMushrooms(); // generates mushrooms in the game grid
+int* generateMushrooms(); // generates mushrooms in the game grid
 void drawMushrooms(sf::RenderWindow& window, sf::Sprite& mushroomSprite); // loops through the game grid and if mushroom found then draw it in the game window
 void moveCentepedes(int*** centepedes); // moves the centepede
 void drawCentepedes(int*** centepedes, sf::RenderWindow& window, sf::Sprite& headSprite, sf::Sprite& segmentSprite); // draws the centepede in the game window
 bool mushroomExist(int x, int y);
+int checkMushroomCollision(int row, int col);
 int main() {
 	int*** centepedes = new int** [2]; // 3d dynamic array. with 2 int arrays
 	srand(time(0));// adding the seeding value in the rand() function
@@ -84,8 +87,6 @@ int main() {
 	backgroundSprite.setTexture(backgroundTexture);
 	backgroundSprite.setColor(sf::Color(255, 255, 255, 255 * 0.20)); // Reduces Opacity to 25%
 
-	// Initializing the mushrooms
-	generateMushrooms();
 
 	// Initializing Player and Player Sprites.
 	float player[2] = {};
@@ -109,8 +110,11 @@ int main() {
 	bulletTexture.loadFromFile("Textures/bullet.png");
 	bulletSprite.setTexture(bulletTexture);
 	bulletSprite.setTextureRect(sf::IntRect(0, 0, boxPixelsX, boxPixelsY));
-	int emptySpaces = 0;
-	int startingX = 17 * boxPixelsX, startingY = 0;
+
+
+	// Initializing the mushrooms
+	int* startingLocation = generateMushrooms();
+	int startingX = startingLocation[1] * boxPixelsX, startingY = startingLocation[0] * boxPixelsY;
 
 	sf::Texture mushroomTexture;
 	sf::Sprite mushroomSprite;
@@ -135,14 +139,14 @@ int main() {
 
 	centepedes[1] = new int* [13];
 	centepedes[1][additionalData] = new int[1];
-	centepedes[1][1] = new int[5];
+	centepedes[1][1] = new int[6];
 	centepedes[1][additionalData][numSeg] = 12;
 	centepedes[1][1][x] = startingX;
 	centepedes[1][1][y] = startingY;
 	centepedes[1][1][anim] = 0;
 	centepedes[1][1][dir] = 0;
 	centepedes[1][1][lastDir] = 0;
-
+	centepedes[1][1][segmentIndex] = 1;
 
 	for (int i = 2; i < 13; i++) {
 		centepedes[1][i] = new int[5];
@@ -155,12 +159,12 @@ int main() {
 		}
 		centepedes[1][i][dir] = 0;
 		centepedes[1][i][lastDir] = 0;
+		centepedes[1][i][segmentIndex] = i;
 	}
 
 	while (window.isOpen()) {
 		int framesPassed = 0;
 		// if ((!framesPassed % 32)) {
-		// cout << mushroomExist(centepedes[1][h][x], centepedes[1][h][y]);
 		window.draw(backgroundSprite);
 		drawMushrooms(window, mushroomSprite);
 		// }
@@ -180,8 +184,6 @@ int main() {
 				return 0;
 				break;
 			case sf::Event::KeyPressed:
-				if (e.key.code == 6)
-					generateMushrooms();
 				if (e.key.code == 57) {
 					if (bullet[exists]) {
 						drawBullet(window, bullet, bulletSprite);
@@ -227,13 +229,16 @@ void moveBullet(float bullet[], sf::Clock& bulletClock) {
 	if (bullet[y] < -32)
 		bullet[exists] = false;
 
-	if (gameGrid[bulletRow][bulletCol] == 2) {
-		gameGrid[bulletRow][bulletCol] = 1;
-		bullet[exists] = false;
-	} else if (gameGrid[bulletRow][bulletCol] == 1) {
-		gameGrid[bulletRow][bulletCol] = 0;
+	if (mushroomExist(bulletRow, bulletCol)) {
+		gameGrid[bulletRow][bulletCol] = checkMushroomCollision(bulletRow, bulletCol);
 		bullet[exists] = false;
 	}
+	// if (gameGrid[bulletRow][bulletCol] == 2) {
+	// 	gameGrid[bulletRow][bulletCol] = 1;
+	// } else if (gameGrid[bulletRow][bulletCol] == 1) {
+	// 	gameGrid[bulletRow][bulletCol] = 0;
+	// 	bullet[exists] = false;
+	// }
 }
 void drawBullet(sf::RenderWindow& window, float bullet[], sf::Sprite& bulletSprite) {
 	bulletSprite.setPosition(bullet[x], bullet[y]);
@@ -262,19 +267,23 @@ void movePlayer(float player[], sf::Sprite& playerSprite, int direction) {
 		break;
 	}
 }
-void generateMushrooms() {
+int* generateMushrooms() {
+	int* startingLoc = new int[2];
+	startingLoc[0] = rand() % (gameRows - 18);
+	startingLoc[1] = rand() % (gameColumns - 13);
 	int mushrooms = 0;
-	static int totalMushrooms = 20;
+	static int totalMushrooms = rand() % 10 + 20;
 
 	for (int i = 1;i < 23;i++) {
-		for (int j = 0;j < gameColumns;j++) {
-			if (!(rand() % 50) && mushrooms <= totalMushrooms && gameGrid[i][j] != 1 && totalMushrooms && gameGrid[i][j] != 2) {
+		for (int j = 2;j < gameColumns - 2;j++) {
+
+			if (!(rand() % 30) && mushrooms <= totalMushrooms && gameGrid[i][j] != 1 && gameGrid[i][j] != 2 && startingLoc[0] != i) {
 				gameGrid[i][j] = 2;
 				mushrooms++;
 			}
 		}
 	}
-	// totalMushrooms += totalMushrooms * 0.2;
+	return startingLoc;
 }
 void drawMushrooms(sf::RenderWindow& window, sf::Sprite& mushroomSprite) {
 	for (int i = 0; i < gameRows; i++) {
@@ -292,7 +301,6 @@ void drawMushrooms(sf::RenderWindow& window, sf::Sprite& mushroomSprite) {
 		}
 	}
 }
-
 void drawCentepedes(int*** centepedes, sf::RenderWindow& window, sf::Sprite& headSprite, sf::Sprite& segmentSprite) {
 
 	int numberOfCentepedes = centepedes[0][0][0];
@@ -318,7 +326,6 @@ void drawCentepedes(int*** centepedes, sf::RenderWindow& window, sf::Sprite& hea
 		}
 	}
 }
-
 void moveCentepedes(int*** centepedes) {
 	static int numOfTimesCalled = 0;
 	int numberOfCentepedes = centepedes[0][0][0];
@@ -388,15 +395,21 @@ void moveCentepedes(int*** centepedes) {
 			}
 		}
 	}
+	// if (!(numOfTimesCalled % 16))printGameGrid();
 	numOfTimesCalled++;
 }
-
 bool mushroomExist(int row, int col) {
 	if (gameGrid[row][col] == 1 || gameGrid[row][col] == 2) {
 		return true;
 	}
 	return false;
 }
-
+int checkMushroomCollision(int row, int col) {
+	if (gameGrid[row][col] == 2) {
+		return 1;
+	} else {
+		return 0;
+	}
+}
 
 //TODO: fps in player movement and bullet
