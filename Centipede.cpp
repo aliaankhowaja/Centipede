@@ -109,7 +109,7 @@ int main() {
 	bulletSprite.setTexture(bulletTexture);
 	bulletSprite.setTextureRect(sf::IntRect(0, 0, boxPixelsX, boxPixelsY));
 	int emptySpaces = 0;
-	int startingX = 25 * boxPixelsX, startingY = 32;
+	int startingX = 25 * boxPixelsX, startingY = 0;
 
 	sf::Texture mushroomTexture;
 	sf::Sprite mushroomSprite;
@@ -139,8 +139,8 @@ int main() {
 	centepedes[1][1][x] = startingX;
 	centepedes[1][1][y] = startingY;
 	centepedes[1][1][anim] = 0;
-	centepedes[1][1][dir] = 2;
-	centepedes[1][1][lastDir] = 2;
+	centepedes[1][1][dir] = 0;
+	centepedes[1][1][lastDir] = 0;
 
 
 	for (int i = 2; i < 13; i++) {
@@ -152,8 +152,8 @@ int main() {
 		} else {
 			centepedes[1][i][anim] = centepedes[1][i - 1][anim] + 1;
 		}
-		centepedes[1][i][dir] = 2;
-		centepedes[1][i][lastDir] = 2;
+		centepedes[1][i][dir] = 0;
+		centepedes[1][i][lastDir] = 0;
 	}
 
 	while (window.isOpen()) {
@@ -203,7 +203,7 @@ int main() {
 		window.display();
 		window.clear();
 		framesPassed++;
-		usleep(10000);// /10
+		usleep(1000);
 
 	}
 
@@ -331,43 +331,49 @@ void moveCentepedes(int*** centepedes) {
 		if (!(numOfTimesCalled % 32) && centepedes[centepede][h][dir] == down) {
 			centepedes[centepede][h][dir] = abs(lastDirection - 2);
 			centepedes[centepede][h][lastDir] = abs(lastDirection - 2);
-			if (centepedes[centepede][h][dir] == 0)
+			if (centepedes[centepede][h][dir] == 2)
 				centepedes[centepede][h][x] = centepedes[centepede][h][x] + 32;
+			else
+				centepedes[centepede][h][y] = centepedes[centepede][h][y] - 32;
 		} else if (centepedes[centepede][h][x] == 0 && centepedes[centepede][h][dir] == 0) {
 			centepedes[centepede][h][dir] = down;
 			centepedes[centepede][h][y] = centepedes[centepede][h][y] + 32;
-		} else if (centepedes[centepede][h][x] == 928 && centepedes[centepede][h][dir] == 2) {
+		} else if (centepedes[centepede][h][x] == 960 && centepedes[centepede][h][dir] == 2) {
 			centepedes[centepede][h][dir] = down;
-			// centepedes[centepede][h][y] = centepedes[centepede][h][y] - 32;
+			centepedes[centepede][h][x] = centepedes[centepede][h][x] - 32;
 		}
-
 		if (centepedes[centepede][h][dir] % 2) {
 			centepedes[centepede][h][y] = centepedes[centepede][h][y] + centepedes[centepede][h][dir] - 2;
 		} else {
 			centepedes[centepede][h][x] = centepedes[centepede][h][x] + centepedes[centepede][h][dir] - 1;
-
 		}
-		// 	for (int segment = 2; segment < 13; segment++) {
-		// 		lastDirection = centepedes[centepede][segment][lastDir];
-		// 		// centepedes[centepede][segment][x] = centepedes[centepede][segment][0] - 1;
-		// 		if (!(numOfTimesCalled % 32) && centepedes[centepede][segment][dir] == down) {
-		// 			centepedes[centepede][segment][dir] = abs(lastDirection - 2);
-		// 			centepedes[centepede][segment][x] = centepedes[centepede][segment][x] + 32;
-		// 		} else if (centepedes[centepede][segment][x] == 0 && centepedes[centepede][segment][dir] != down) {
-		// 			centepedes[centepede][segment][dir] = down;
-		// 			centepedes[centepede][segment][y] = centepedes[centepede][segment][y] + 32;
-		// 		}
-		// 		if (centepedes[centepede][segment][dir] % 2) {
-		// 			centepedes[centepede][segment][y] = centepedes[centepede][segment][y] + centepedes[centepede][segment][dir] - 2;
-		// 		} else {
-		// 			centepedes[centepede][segment][x] = centepedes[centepede][segment][x] + centepedes[centepede][segment][dir] - 1;
-		// 		}
-		// 		if (centepedes[centepede][segment - 1][anim] == 7) {
-		// 			centepedes[centepede][segment][anim] = 0;
-		// 		} else {
-		// 			centepedes[centepede][segment][anim] = centepedes[centepede][segment - 1][anim] + 1;
-		// 		}
-		// 	}
+		for (int segment = 2; segment < 13; segment++) {
+			lastDirection = centepedes[centepede][segment][lastDir];
+			if (!(numOfTimesCalled % 32) && centepedes[centepede][segment][dir] == down) {
+				centepedes[centepede][segment][dir] = abs(lastDirection - 2);
+				centepedes[centepede][segment][lastDir] = abs(lastDirection - 2);
+				if (centepedes[centepede][segment][dir] == 2)
+					centepedes[centepede][segment][x] = centepedes[centepede][segment][x] + 32;
+				else
+					centepedes[centepede][segment][y] = centepedes[centepede][segment][y] - 32;
+			} else if (centepedes[centepede][segment][x] == 0 && centepedes[centepede][segment][dir] == 0) {
+				centepedes[centepede][segment][dir] = down;
+				centepedes[centepede][segment][y] = centepedes[centepede][segment][y] + 32;
+			} else if (centepedes[centepede][segment][x] == 960 && centepedes[centepede][segment][dir] == 2) {
+				centepedes[centepede][segment][dir] = down;
+				centepedes[centepede][segment][x] = centepedes[centepede][segment][x] - 32;
+			}
+			if (centepedes[centepede][segment][dir] % 2) {
+				centepedes[centepede][segment][y] = centepedes[centepede][segment][y] + centepedes[centepede][segment][dir] - 2;
+			} else {
+				centepedes[centepede][segment][x] = centepedes[centepede][segment][x] + centepedes[centepede][segment][dir] - 1;
+			}
+			if (centepedes[centepede][segment - 1][anim] == 7) {
+				centepedes[centepede][segment][anim] = 0;
+			} else {
+				centepedes[centepede][segment][anim] = centepedes[centepede][segment - 1][anim] + 1;
+			}
+		}
 	}
 	numOfTimesCalled++;
 }
